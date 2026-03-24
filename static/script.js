@@ -1,14 +1,12 @@
-const API_URL = "https://ai-widget-1.onrender.com/chat";
+const API_URL = "/chat"; // ✅ FIXED
 
-// ✅ Wait for DOM to load (FIXES your error)
+// ✅ Wait for DOM to load
 document.addEventListener("DOMContentLoaded", () => {
   const sendBtn = document.getElementById("send-btn");
   const input = document.getElementById("user-input");
 
-  // Click event
   sendBtn.addEventListener("click", sendMessage);
 
-  // Press Enter to send
   input.addEventListener("keypress", function (e) {
     if (e.key === "Enter") {
       sendMessage();
@@ -24,10 +22,7 @@ async function sendMessage() {
 
   const chatBox = document.getElementById("chat-box");
 
-  // ✅ Show user message
   chatBox.innerHTML += `<p><b>You:</b> ${message}</p>`;
-
-  // ✅ Auto scroll
   chatBox.scrollTop = chatBox.scrollHeight;
 
   try {
@@ -45,16 +40,12 @@ async function sendMessage() {
 
     const data = await res.json();
 
-    // ✅ Show bot response
     chatBox.innerHTML += `<p><b>Bot:</b> ${data.reply}</p>`;
   } catch (err) {
     chatBox.innerHTML += `<p style="color:red;">⚠️ Server error. Try again.</p>`;
     console.error(err);
   }
 
-  // ✅ Clear input
   input.value = "";
-
-  // ✅ Auto scroll again
   chatBox.scrollTop = chatBox.scrollHeight;
 }
