@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os, tempfile
 from groq import Groq
@@ -10,6 +11,15 @@ from datetime import datetime
 
 app = FastAPI()
 
+# ✅ CORS FIX (IMPORTANT)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # change to your frontend URL later
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # ✅ Serve static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -18,39 +28,33 @@ def serve_home():
     return FileResponse("static/index.html")
 
 # ✅ GROQ INIT
-api_key = os.getenv("GROQ_API_KEY")
-client = Groq(api_key=api_key)
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# ✅ FIREBASE INIT (FIXED FOR RENDER)
+# ✅ FIREBASE INIT
 db = None
 
 try:
     if not firebase_admin._apps:
         firebase_key = os.getenv("FIREBASE_KEY")
 
-        if not firebase_key:
-            raise Exception("FIREBASE_KEY missing")
+        if firebase_key:
+            with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".json") as f:
+                f.write(firebase_key)
+                temp_path = f.name
 
-        # Write JSON safely to temp file
-        with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".json") as f:
-            f.write(firebase_key)
-            temp_path = f.name
-
-        cred = credentials.Certificate(temp_path)
-        firebase_admin.initialize_app(cred)
+            cred = credentials.Certificate(temp_path)
+            firebase_admin.initialize_app(cred)
 
     db = firestore.client()
 
 except Exception as e:
     print("🔥 Firebase Init Error:", e)
 
-
 # ✅ REQUEST MODEL
 class ChatRequest(BaseModel):
     message: str
     userId: str
     clientId: str
-
 
 # ✅ CHAT ENDPOINT
 @app.post("/chat")
@@ -60,7 +64,7 @@ async def chat(req: ChatRequest):
             {"role": "system", "content": "You are a helpful AI assistant."}
         ]
 
-        # ✅ LOAD CHAT HISTORY (if firebase works)
+        # ✅ LOAD HISTORY
         if db:
             chats = db.collection("clients") \
                 .document(req.clientId) \
@@ -78,10 +82,8 @@ async def chat(req: ChatRequest):
                 messages.append({"role": "user", "content": h.get("message", "")})
                 messages.append({"role": "assistant", "content": h.get("response", "")})
 
-        # ✅ USER MESSAGE
         messages.append({"role": "user", "content": req.message})
 
-        # ✅ GROQ CALL
         completion = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=messages
@@ -89,7 +91,7 @@ async def chat(req: ChatRequest):
 
         reply = completion.choices[0].message.content
 
-        # ✅ SAVE CHAT (if firebase works)
+        # ✅ SAVE CHAT
         if db:
             db.collection("clients") \
                 .document(req.clientId) \
