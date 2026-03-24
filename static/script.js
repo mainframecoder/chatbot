@@ -1,6 +1,7 @@
-const API_URL = "https://ai-widget-1.onrender.com/chat";
-
-document.getElementById("send-btn").addEventListener("click", sendMessage);
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("send-btn");
+  btn.addEventListener("click", sendMessage);
+});
 
 async function sendMessage() {
   const input = document.getElementById("user-input");
@@ -13,7 +14,7 @@ async function sendMessage() {
   chatBox.innerHTML += `<p><b>You:</b> ${message}</p>`;
 
   try {
-    const res = await fetch(API_URL, {
+    const res = await fetch("/chat", {   // ✅ FIXED (same backend)
       method: "POST",
       headers: {
         "Content-Type": "application/json",
