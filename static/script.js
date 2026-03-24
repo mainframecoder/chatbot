@@ -1,49 +1,37 @@
-const API_URL = "/chat";
+const API_URL = "https://ai-widget-1.onrender.com/chat";
 
-function getUserId() {
-  let id = localStorage.getItem("userId");
-  if (!id) {
-    id = "user_" + Math.random().toString(36).substring(2);
-    localStorage.setItem("userId", id);
-  }
-  return id;
-}
+document.getElementById("send-btn").addEventListener("click", sendMessage);
 
 async function sendMessage() {
   const input = document.getElementById("user-input");
-  const chatBox = document.getElementById("chat-box");
+  const message = input.value;
 
-  const message = input.value.trim();
   if (!message) return;
 
-  chatBox.innerHTML += `<p><b>You:</b> ${message}</p>`;
-  input.value = "";
+  const chatBox = document.getElementById("chat-box");
 
-  const id = Date.now();
-  chatBox.innerHTML += `<p id="${id}">Thinking...</p>`;
+  chatBox.innerHTML += `<p><b>You:</b> ${message}</p>`;
 
   try {
     const res = await fetch(API_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         message: message,
-        userId: getUserId(),
+        userId: "user_1",
         clientId: "client_1"
-      })
+      }),
     });
 
     const data = await res.json();
 
-    document.getElementById(id).innerHTML =
-      `<b>Bot:</b> ${data.reply}`;
-
+    chatBox.innerHTML += `<p><b>Bot:</b> ${data.reply}</p>`;
   } catch (err) {
-    document.getElementById(id).innerHTML =
-      "⚠️ Server error. Try again.";
+    chatBox.innerHTML += `<p style="color:red;">⚠️ Server error. Try again.</p>`;
+    console.error(err);
   }
 
-  chatBox.scrollTop = chatBox.scrollHeight;
+  input.value = "";
 }
