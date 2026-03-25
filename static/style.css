@@ -20,20 +20,34 @@ body {
 }
 
 .message {
-  margin: 8px 0;
-  line-height: 1.4;
+  margin: 10px 0;
+  line-height: 1.5;
 }
 
 .user {
   text-align: right;
-  color: #333;
 }
 
 .bot {
   text-align: left;
-  color: #000;
 }
 
+/* Bubble style */
+.user {
+  background: #dcf8c6;
+  padding: 8px 12px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+.bot {
+  background: #eee;
+  padding: 8px 12px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+/* Input */
 .input-area {
   display: flex;
   gap: 8px;
@@ -53,10 +67,6 @@ button {
   color: white;
   border-radius: 8px;
   cursor: pointer;
-}
-
-button:hover {
-  background: #45a049;
 }
 
 /* Typing animation */
