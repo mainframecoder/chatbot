@@ -1,19 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Chat SaaS</title>
+
+  <!-- ✅ FIXED PATH -->
+  <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
 
-<div class="top">
-  Usage: <span id="usage"></span>
-</div>
+  <!-- 🔥 TOP BAR (usage like ChatGPT) -->
+  <div class="top-bar">
+    <div>🤖 AI Chat</div>
+    <div id="usage">Loading...</div>
+  </div>
 
-<div id="chat"></div>
+  <!-- 💬 CHAT AREA -->
+  <div id="chat-container">
+    <div id="chat-box"></div>
+  </div>
 
-<input id="msg" placeholder="Type..." />
-<button onclick="send()">Send</button>
+  <!-- ✍️ INPUT -->
+  <div class="input-area">
+    <input id="msg" placeholder="Type your message..." />
+    <button onclick="send()">Send</button>
+  </div>
 
-<script src="script.js"></script>
+  <!-- ⚡ FIXED PATH -->
+  <script src="/static/script.js"></script>
+
 </body>
 </html>
