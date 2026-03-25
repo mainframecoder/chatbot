@@ -1,6 +1,5 @@
 fastapi
 uvicorn[standard]
 groq
+stripe
 firebase-admin
-python-dotenv
-httpx==0.27.0
