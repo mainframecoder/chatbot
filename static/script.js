@@ -1,51 +1,59 @@
-const API_URL = "/chat"; // ✅ FIXED
+const API_URL = "/chat";
 
-// ✅ Wait for DOM to load
-document.addEventListener("DOMContentLoaded", () => {
-  const sendBtn = document.getElementById("send-btn");
-  const input = document.getElementById("user-input");
-
-  sendBtn.addEventListener("click", sendMessage);
-
-  input.addEventListener("keypress", function (e) {
-    if (e.key === "Enter") {
-      sendMessage();
-    }
-  });
-});
+const USER_ID = "user123";
+const CLIENT_ID = "client123";
 
 async function sendMessage() {
-  const input = document.getElementById("user-input");
-  const message = input.value.trim();
+    const input = document.getElementById("user-input");
+    const message = input.value.trim();
 
-  if (!message) return;
+    if (!message) return;
 
-  const chatBox = document.getElementById("chat-box");
+    addMessage(message, "user");
+    input.value = "";
 
-  chatBox.innerHTML += `<p><b>You:</b> ${message}</p>`;
-  chatBox.scrollTop = chatBox.scrollHeight;
+    showTyping(true);
 
-  try {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: message,
-        userId: "user_1",
-        clientId: "client_1",
-      }),
-    });
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: message,
+                userId: USER_ID,
+                clientId: CLIENT_ID
+            })
+        });
 
-    const data = await res.json();
+        const data = await response.json();
 
-    chatBox.innerHTML += `<p><b>Bot:</b> ${data.reply}</p>`;
-  } catch (err) {
-    chatBox.innerHTML += `<p style="color:red;">⚠️ Server error. Try again.</p>`;
-    console.error(err);
-  }
+        showTyping(false);
+        addMessage(data.reply, "bot");
 
-  input.value = "";
-  chatBox.scrollTop = chatBox.scrollHeight;
+    } catch (err) {
+        showTyping(false);
+        addMessage("⚠️ Error connecting to server", "bot");
+    }
 }
+
+function addMessage(text, sender) {
+    const chatBox = document.getElementById("chat-box");
+
+    const msg = document.createElement("div");
+    msg.classList.add("message", sender);
+    msg.innerText = text;
+
+    chatBox.appendChild(msg);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function showTyping(show) {
+    document.getElementById("typing").classList.toggle("hidden", !show);
+}
+
+document.getElementById("user-input")
+.addEventListener("keypress", function(e) {
+    if (e.key === "Enter") sendMessage();
+});
