@@ -1,36 +1,52 @@
+import os
+import tempfile
+from datetime import datetime
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import os, tempfile
+from dotenv import load_dotenv
+
 from groq import Groq
 import firebase_admin
 from firebase_admin import credentials, firestore
-from datetime import datetime
 
-app = FastAPI()
+# ✅ Load env variables
+load_dotenv()
 
-# ✅ CORS FIX (IMPORTANT)
+app = FastAPI(title="AI Chatbot API")
+
+# ✅ CORS (tighten later for prod)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # change to your frontend URL later
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ✅ Serve static files
+# ✅ Static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
 def serve_home():
     return FileResponse("static/index.html")
 
-# ✅ GROQ INIT
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+# ✅ Health check
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
-# ✅ FIREBASE INIT
+# ✅ Init Groq
+groq_api_key = os.getenv("GROQ_API_KEY")
+if not groq_api_key:
+    raise ValueError("❌ GROQ_API_KEY not set")
+
+client = Groq(api_key=groq_api_key)
+
+# ✅ Init Firebase
 db = None
 
 try:
@@ -50,21 +66,21 @@ try:
 except Exception as e:
     print("🔥 Firebase Init Error:", e)
 
-# ✅ REQUEST MODEL
+# ✅ Request model
 class ChatRequest(BaseModel):
     message: str
     userId: str
     clientId: str
 
-# ✅ CHAT ENDPOINT
+# ✅ Chat endpoint
 @app.post("/chat")
 async def chat(req: ChatRequest):
     try:
         messages = [
-            {"role": "system", "content": "You are a helpful AI assistant."}
+            {"role": "system", "content": "You are a helpful, smart, concise AI assistant."}
         ]
 
-        # ✅ LOAD HISTORY
+        # 🔁 Load last 3 chats
         if db:
             chats = db.collection("clients") \
                 .document(req.clientId) \
@@ -79,11 +95,15 @@ async def chat(req: ChatRequest):
             history.reverse()
 
             for h in history:
-                messages.append({"role": "user", "content": h.get("message", "")})
-                messages.append({"role": "assistant", "content": h.get("response", "")})
+                if h.get("message"):
+                    messages.append({"role": "user", "content": h["message"]})
+                if h.get("response"):
+                    messages.append({"role": "assistant", "content": h["response"]})
 
+        # 👉 Current message
         messages.append({"role": "user", "content": req.message})
 
+        # 🤖 Call LLM
         completion = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=messages
@@ -91,7 +111,7 @@ async def chat(req: ChatRequest):
 
         reply = completion.choices[0].message.content
 
-        # ✅ SAVE CHAT
+        # 💾 Save chat
         if db:
             db.collection("clients") \
                 .document(req.clientId) \
@@ -108,4 +128,4 @@ async def chat(req: ChatRequest):
 
     except Exception as e:
         print("🔥 CHAT ERROR:", e)
-        return {"reply": f"Error: {str(e)}"}
+        return {"reply": "⚠️ Something went wrong. Try again."}
