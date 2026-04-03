@@ -18,7 +18,7 @@ load_dotenv()
 
 app = FastAPI(title="AI Chatbot API")
 
-# CORS (restrict in prod)
+# CORS (restrict in production later)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -27,7 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Static
+# Static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
@@ -45,7 +45,7 @@ if not groq_api_key:
 
 client = Groq(api_key=groq_api_key)
 
-# Init Firebase
+# Init Firebase (optional)
 db = None
 try:
     if not firebase_admin._apps:
@@ -78,7 +78,7 @@ async def chat(req: ChatRequest):
             {"role": "system", "content": "You are a helpful, smart, concise AI assistant."}
         ]
 
-        # Load history
+        # Load history (last 5 messages)
         if db:
             chats = db.collection("clients") \
                 .document(req.clientId) \
@@ -98,7 +98,7 @@ async def chat(req: ChatRequest):
                 if h.get("response"):
                     messages.append({"role": "assistant", "content": h["response"]})
 
-        # Current message
+        # Add current message
         messages.append({"role": "user", "content": req.message})
 
         # Call LLM
