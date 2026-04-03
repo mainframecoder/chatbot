@@ -2,21 +2,40 @@
 <html>
 <head>
     <title>AI Chat</title>
+
+    <!-- Open Sans Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
 <div class="chat-container">
-    <div class="chat-header">🤖 AI Assistant</div>
 
+    <!-- Header -->
+    <div class="chat-header">
+        🤖 AI Assistant
+
+        <!-- Theme Toggle -->
+        <select id="theme-switcher">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+            <option value="green">Green</option>
+        </select>
+    </div>
+
+    <!-- Messages -->
     <div id="chat-box" class="chat-box"></div>
 
+    <!-- Typing -->
     <div id="typing" class="typing hidden">Bot is typing...</div>
 
+    <!-- Input -->
     <div class="input-area">
         <input id="user-input" placeholder="Ask anything..." />
         <button onclick="sendMessage()">Send</button>
     </div>
+
 </div>
 
 <script src="/static/script.js"></script>
