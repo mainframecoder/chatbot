@@ -17,6 +17,7 @@ load_dotenv()
 
 app = FastAPI()
 
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,37 +26,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Static
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
 def home():
     return FileResponse("static/index.html")
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
-# ✅ Groq
+# Groq
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# ✅ Firebase
+# Firebase
 db = None
 try:
     if not firebase_admin._apps:
         firebase_key = os.getenv("FIREBASE_KEY")
 
-        with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".json") as f:
-            f.write(firebase_key)
-            temp_path = f.name
+        if firebase_key:
+            with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".json") as f:
+                f.write(firebase_key)
+                temp_path = f.name
 
-        cred = credentials.Certificate(temp_path)
-        firebase_admin.initialize_app(cred)
+            cred = credentials.Certificate(temp_path)
+            firebase_admin.initialize_app(cred)
 
     db = firestore.client()
 except Exception as e:
     print("Firebase error:", e)
 
-# ✅ Model
 class ChatRequest(BaseModel):
     message: str
     userId: str
@@ -66,9 +64,7 @@ class ChatRequest(BaseModel):
 async def chat_stream(req: ChatRequest):
 
     async def generate():
-        messages = [
-            {"role": "system", "content": "You are a smart assistant."}
-        ]
+        messages = [{"role": "system", "content": "You are a smart assistant."}]
 
         # Load history
         if db:
