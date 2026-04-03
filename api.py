@@ -17,16 +17,22 @@ load_dotenv()
 
 app = FastAPI()
 
-# CORS
+# ✅ CORS (important for Render)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://chatbot-v4tn.onrender.com",
+        "http://localhost:3000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Static
+@app.options("/{rest_of_path:path}")
+async def preflight():
+    return {}
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
@@ -43,21 +49,24 @@ try:
         firebase_key = os.getenv("FIREBASE_KEY")
 
         if firebase_key:
-            with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".json") as f:
+            with tempfile.NamedTemporaryFile(delete=False, mode="w") as f:
                 f.write(firebase_key)
-                temp_path = f.name
+                temp = f.name
 
-            cred = credentials.Certificate(temp_path)
+            cred = credentials.Certificate(temp)
             firebase_admin.initialize_app(cred)
 
     db = firestore.client()
 except Exception as e:
     print("Firebase error:", e)
 
+# Model
 class ChatRequest(BaseModel):
     message: str
     userId: str
     clientId: str
+    threadId: str
+
 
 # 🔥 STREAMING CHAT
 @app.post("/chat-stream")
@@ -68,21 +77,21 @@ async def chat_stream(req: ChatRequest):
 
         # Load history
         if db:
-            chats = db.collection("clients") \
+            msgs = db.collection("clients") \
                 .document(req.clientId) \
                 .collection("users") \
                 .document(req.userId) \
-                .collection("chats") \
-                .order_by("timestamp", direction=firestore.Query.DESCENDING) \
-                .limit(5) \
+                .collection("threads") \
+                .document(req.threadId) \
+                .collection("messages") \
+                .order_by("timestamp") \
+                .limit(10) \
                 .stream()
 
-            history = [c.to_dict() for c in chats]
-            history.reverse()
-
-            for h in history:
-                messages.append({"role": "user", "content": h["message"]})
-                messages.append({"role": "assistant", "content": h["response"]})
+            for m in msgs:
+                d = m.to_dict()
+                messages.append({"role": "user", "content": d["message"]})
+                messages.append({"role": "assistant", "content": d["response"]})
 
         messages.append({"role": "user", "content": req.message})
 
@@ -99,17 +108,59 @@ async def chat_stream(req: ChatRequest):
             full_reply += delta
             yield delta
 
-        # Save
+        # Save message
         if db:
-            db.collection("clients") \
+            thread_ref = db.collection("clients") \
                 .document(req.clientId) \
                 .collection("users") \
                 .document(req.userId) \
-                .collection("chats") \
-                .add({
-                    "message": req.message,
-                    "response": full_reply,
-                    "timestamp": datetime.utcnow()
-                })
+                .collection("threads") \
+                .document(req.threadId)
+
+            # Ensure thread exists
+            thread_ref.set({
+                "updated": datetime.utcnow()
+            }, merge=True)
+
+            thread_ref.collection("messages").add({
+                "message": req.message,
+                "response": full_reply,
+                "timestamp": datetime.utcnow()
+            })
 
     return StreamingResponse(generate(), media_type="text/plain")
+
+
+# 🔥 GET THREADS
+@app.get("/threads/{client_id}/{user_id}")
+def get_threads(client_id: str, user_id: str):
+    if not db:
+        return []
+
+    threads = db.collection("clients") \
+        .document(client_id) \
+        .collection("users") \
+        .document(user_id) \
+        .collection("threads") \
+        .stream()
+
+    return [{"id": t.id} for t in threads]
+
+
+# 🔥 GET MESSAGES
+@app.get("/messages/{client_id}/{user_id}/{thread_id}")
+def get_messages(client_id: str, user_id: str, thread_id: str):
+    if not db:
+        return []
+
+    msgs = db.collection("clients") \
+        .document(client_id) \
+        .collection("users") \
+        .document(user_id) \
+        .collection("threads") \
+        .document(thread_id) \
+        .collection("messages") \
+        .order_by("timestamp") \
+        .stream()
+
+    return [m.to_dict() for m in msgs]
