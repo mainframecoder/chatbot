@@ -63,6 +63,11 @@ document.getElementById("user-input")
 });
 
 // THEME SWITCH
-function setTheme(theme) {
+function setTheme(event, theme) {
     document.body.className = theme;
+
+    document.querySelectorAll(".theme-buttons button")
+        .forEach(btn => btn.classList.remove("active"));
+
+    event.target.classList.add("active");
 }
