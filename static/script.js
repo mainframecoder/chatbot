@@ -1,65 +1,56 @@
-document.addEventListener("DOMContentLoaded", () => {
+const API_URL = "/chat"; // SAME BACKEND (important)
 
-    const API = window.location.origin; // ✅ same backend
+const messagesDiv = document.getElementById("messages");
+const input = document.getElementById("input");
 
-    const input = document.getElementById("user-input");
-    const chatBox = document.getElementById("chat-box");
-    const sendBtn = document.getElementById("send-btn");
+function addMessage(text, type) {
+  const div = document.createElement("div");
+  div.className = "msg " + type;
+  div.innerText = text;
+  messagesDiv.appendChild(div);
 
-    function addMessage(text, sender) {
-        const msg = document.createElement("div");
-        msg.classList.add("message", sender);
-        msg.innerText = text;
-        chatBox.appendChild(msg);
-        chatBox.scrollTop = chatBox.scrollHeight;
-        return msg;
-    }
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
 
-    async function sendMessage() {
-        const message = input.value.trim();
-        if (!message) return;
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text) return;
 
-        addMessage(message, "user");
-        input.value = "";
+  addMessage(text, "user");
+  input.value = "";
 
-        const botMsg = addMessage("...", "bot");
+  // typing indicator
+  const typing = document.createElement("div");
+  typing.className = "msg bot";
+  typing.innerText = "Typing...";
+  messagesDiv.appendChild(typing);
 
-        try {
-            const res = await fetch(`${API}/chat-stream`, {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({ message })
-            });
-
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder();
-
-            let full = "";
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const chunk = decoder.decode(value);
-                full += chunk;
-                botMsg.innerText = full;
-            }
-
-        } catch (err) {
-            botMsg.innerText = "Error";
-            console.error(err);
-        }
-    }
-
-    function setTheme(theme) {
-        document.body.className = theme;
-    }
-
-    sendBtn.addEventListener("click", sendMessage);
-
-    input.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") sendMessage();
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message: text })
     });
 
-    window.setTheme = setTheme;
+    const data = await res.json();
+
+    typing.remove();
+    addMessage(data.response, "bot");
+
+  } catch (err) {
+    typing.innerText = "Error connecting to server";
+  }
+}
+
+function newChat() {
+  messagesDiv.innerHTML = "";
+}
+
+// ENTER key support
+input.addEventListener("keypress", function (e) {
+  if (e.key === "Enter") {
+    sendMessage();
+  }
 });
