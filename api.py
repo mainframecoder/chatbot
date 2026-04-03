@@ -4,7 +4,7 @@ from datetime import datetime
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -18,7 +18,7 @@ load_dotenv()
 
 app = FastAPI(title="AI Chatbot API")
 
-# CORS (restrict later in prod)
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -27,7 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Static files (serves your mobile UI too)
+# Static
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
@@ -38,14 +38,14 @@ def serve_home():
 def health():
     return {"status": "ok"}
 
-# Init Groq
+# Groq
 groq_api_key = os.getenv("GROQ_API_KEY")
 if not groq_api_key:
     raise ValueError("❌ GROQ_API_KEY not set")
 
 client = Groq(api_key=groq_api_key)
 
-# Init Firebase (optional)
+# Firebase
 db = None
 try:
     if not firebase_admin._apps:
@@ -64,7 +64,7 @@ try:
 except Exception as e:
     print("🔥 Firebase Init Error:", e)
 
-# Request model
+# Model
 class ChatRequest(BaseModel):
     message: str
     userId: str
@@ -73,58 +73,64 @@ class ChatRequest(BaseModel):
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
-    try:
-        messages = [
-            {"role": "system", "content": "You are a helpful, smart, concise AI assistant."}
-        ]
 
-        # Load last chats
-        if db:
-            chats = db.collection("clients") \
-                .document(req.clientId) \
-                .collection("users") \
-                .document(req.userId) \
-                .collection("chats") \
-                .order_by("timestamp", direction=firestore.Query.DESCENDING) \
-                .limit(5) \
-                .stream()
+    messages = [
+        {"role": "system", "content": "You are a helpful, smart, concise AI assistant."}
+    ]
 
-            history = [c.to_dict() for c in chats]
-            history.reverse()
+    # Load history
+    if db:
+        chats = db.collection("clients") \
+            .document(req.clientId) \
+            .collection("users") \
+            .document(req.userId) \
+            .collection("chats") \
+            .order_by("timestamp", direction=firestore.Query.DESCENDING) \
+            .limit(5) \
+            .stream()
 
-            for h in history:
-                if h.get("message"):
-                    messages.append({"role": "user", "content": h["message"]})
-                if h.get("response"):
-                    messages.append({"role": "assistant", "content": h["response"]})
+        history = [c.to_dict() for c in chats]
+        history.reverse()
 
-        # Add current message
-        messages.append({"role": "user", "content": req.message})
+        for h in history:
+            if h.get("message"):
+                messages.append({"role": "user", "content": h["message"]})
+            if h.get("response"):
+                messages.append({"role": "assistant", "content": h["response"]})
 
-        # Call LLM
-        completion = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=messages,
-            temperature=0.7
-        )
+    messages.append({"role": "user", "content": req.message})
 
-        reply = completion.choices[0].message.content
+    def generate():
+        full_reply = ""
 
-        # Save chat
-        if db:
-            db.collection("clients") \
-                .document(req.clientId) \
-                .collection("users") \
-                .document(req.userId) \
-                .collection("chats") \
-                .add({
-                    "message": req.message,
-                    "response": reply,
-                    "timestamp": datetime.utcnow()
-                })
+        try:
+            stream = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=messages,
+                stream=True
+            )
 
-        return {"reply": reply}
+            for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    text = chunk.choices[0].delta.content
+                    full_reply += text
+                    yield text
 
-    except Exception as e:
-        print("🔥 CHAT ERROR:", e)
-        return {"reply": "⚠️ Server error. Try again."}
+            # Save chat after full response
+            if db:
+                db.collection("clients") \
+                    .document(req.clientId) \
+                    .collection("users") \
+                    .document(req.userId) \
+                    .collection("chats") \
+                    .add({
+                        "message": req.message,
+                        "response": full_reply,
+                        "timestamp": datetime.utcnow()
+                    })
+
+        except Exception as e:
+            print("🔥 STREAM ERROR:", e)
+            yield "⚠️ Error generating response"
+
+    return StreamingResponse(generate(), media_type="text/plain")
