@@ -1,7 +1,6 @@
 body {
     margin: 0;
     font-family: Arial;
-    background: #0f172a;
 }
 
 .app {
@@ -12,9 +11,17 @@ body {
 /* Sidebar */
 .sidebar {
     width: 260px;
-    background: #020617;
-    color: white;
     padding: 10px;
+}
+
+.chat-item {
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+.chat-item:hover {
+    background: rgba(255,255,255,0.1);
 }
 
 /* Chat */
@@ -22,18 +29,8 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #111827;
 }
 
-.chat-header {
-    padding: 15px;
-    color: white;
-    border-bottom: 1px solid #1f2937;
-    display: flex;
-    justify-content: space-between;
-}
-
-/* Messages */
 .chat-box {
     flex: 1;
     padding: 10px;
@@ -41,69 +38,53 @@ body {
 }
 
 .message {
-    padding: 12px 16px;
-    border-radius: 18px;
-    margin: 6px 0;
+    padding: 12px;
+    border-radius: 14px;
+    margin: 6px;
     max-width: 70%;
-    animation: fadeIn 0.2s ease;
-}
-
-.user {
-    background: #2563eb;
-    color: white;
-    margin-left: auto;
-}
-
-.bot {
-    background: #1f2937;
-    color: white;
 }
 
 /* Input */
 .input-area {
     display: flex;
-    border-top: 1px solid #1f2937;
 }
 
 input {
     flex: 1;
-    padding: 14px;
-    border: none;
-    background: transparent;
+    padding: 12px;
+}
+
+/* THEMES */
+
+/* DARK */
+.dark {
+    background: #0f172a;
     color: white;
 }
 
-button {
-    background: #2563eb;
-    border: none;
-    padding: 12px 16px;
-    color: white;
-    cursor: pointer;
-}
+.dark .sidebar { background: #020617; }
+.dark .chat-container { background: #111827; }
+.dark .user { background: #2563eb; }
+.dark .bot { background: #1f2937; }
 
-/* Light mode */
+/* LIGHT */
 .light {
-    background: white;
-}
-
-.light .chat-container {
-    background: #f9fafb;
-}
-
-.light .message.bot {
-    background: #e5e7eb;
+    background: #ffffff;
     color: black;
 }
 
-/* Mobile */
-@media (max-width: 768px) {
-    .sidebar {
-        display: none;
-    }
+.light .sidebar { background: #f1f5f9; }
+.light .chat-container { background: #ffffff; }
+.light .user { background: #2563eb; color: white; }
+.light .bot { background: #e5e7eb; color: black; }
+
+/* GREEN */
+.green {
+    background: #022c22;
+    color: #d1fae5;
 }
 
-/* Animation */
-@keyframes fadeIn {
-    from {opacity: 0; transform: translateY(5px);}
-    to {opacity: 1;}
-}
+.green .sidebar { background: #064e3b; }
+.green .chat-container { background: #022c22; }
+.green .user { background: #10b981; }
+.green .bot { background: #065f46; }
