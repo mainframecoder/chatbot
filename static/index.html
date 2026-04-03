@@ -3,25 +3,25 @@
 <head>
     <title>AI Chat</title>
 
-    <!-- Open Sans Font -->
+    <!-- Font -->
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="/static/style.css">
 </head>
-<body>
+<body class="dark">
 
 <div class="chat-container">
 
     <!-- Header -->
     <div class="chat-header">
-        🤖 AI Assistant
+        <span>🤖 AI Assistant</span>
 
-        <!-- Theme Toggle -->
-        <select id="theme-switcher">
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-            <option value="green">Green</option>
-        </select>
+        <!-- Theme Buttons -->
+        <div class="theme-buttons">
+            <button onclick="setTheme('dark')">🌙</button>
+            <button onclick="setTheme('light')">☀️</button>
+            <button onclick="setTheme('green')">🟢</button>
+        </div>
     </div>
 
     <!-- Messages -->
