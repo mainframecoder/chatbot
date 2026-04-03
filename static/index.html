@@ -3,11 +3,15 @@
 <head>
     <title>AI Chat</title>
 
+    <!-- ✅ MOBILE FIX -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <!-- Font -->
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body class="dark">
 
 <div class="chat-container">
@@ -16,7 +20,6 @@
     <div class="chat-header">
         <span>🤖 AI Assistant</span>
 
-        <!-- Theme Buttons -->
         <div class="theme-buttons">
             <button onclick="setTheme(event, 'dark')" class="active">🌙</button>
             <button onclick="setTheme(event, 'light')">☀️</button>
@@ -24,7 +27,7 @@
         </div>
     </div>
 
-    <!-- Messages -->
+    <!-- Chat -->
     <div id="chat-box" class="chat-box"></div>
 
     <!-- Typing -->
