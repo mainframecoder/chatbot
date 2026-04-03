@@ -3,6 +3,7 @@ const API_URL = "/chat";
 const USER_ID = "user123";
 const CLIENT_ID = "client123";
 
+// SEND MESSAGE
 async function sendMessage() {
     const input = document.getElementById("user-input");
     const message = input.value.trim();
@@ -38,6 +39,7 @@ async function sendMessage() {
     }
 }
 
+// ADD MESSAGE
 function addMessage(text, sender) {
     const chatBox = document.getElementById("chat-box");
 
@@ -49,11 +51,19 @@ function addMessage(text, sender) {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+// TYPING
 function showTyping(show) {
     document.getElementById("typing").classList.toggle("hidden", !show);
 }
 
+// ENTER KEY
 document.getElementById("user-input")
 .addEventListener("keypress", function(e) {
     if (e.key === "Enter") sendMessage();
+});
+
+// THEME SWITCHER
+document.getElementById("theme-switcher")
+.addEventListener("change", function(e) {
+    document.body.className = e.target.value;
 });
