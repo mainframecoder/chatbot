@@ -1,45 +1,56 @@
 body {
     margin: 0;
-    background: #0f172a;
     font-family: Arial;
+    background: #0f172a;
+}
+
+.app {
     display: flex;
-    justify-content: center;
-    align-items: center;
     height: 100vh;
 }
 
-/* Container */
-.chat-container {
-    width: 420px;
-    height: 600px;
-    background: #111827;
-    border-radius: 16px;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+/* Sidebar */
+.sidebar {
+    width: 260px;
+    background: #020617;
+    color: white;
+    padding: 10px;
 }
 
-/* Header */
-.chat-header {
-    padding: 16px;
-    color: white;
-    font-weight: bold;
-    border-bottom: 1px solid #1f2937;
+.sidebar button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
 }
 
 /* Chat */
-.chat-box {
+.chat-container {
     flex: 1;
-    padding: 12px;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    background: #111827;
+}
+
+.chat-header {
+    padding: 15px;
+    color: white;
+    border-bottom: 1px solid #1f2937;
+    display: flex;
+    justify-content: space-between;
 }
 
 /* Messages */
+.chat-box {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+}
+
 .message {
     padding: 10px 14px;
     border-radius: 12px;
     margin: 6px 0;
-    max-width: 75%;
+    max-width: 70%;
 }
 
 .user {
@@ -75,13 +86,23 @@ button {
     cursor: pointer;
 }
 
-/* Typing */
-.typing {
-    font-size: 12px;
-    color: gray;
-    padding: 0 12px;
+/* Light mode */
+.light {
+    background: white;
 }
 
-.hidden {
-    display: none;
+.light .chat-container {
+    background: #f9fafb;
+}
+
+.light .message.bot {
+    background: #e5e7eb;
+    color: black;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .sidebar {
+        display: none;
+    }
 }
