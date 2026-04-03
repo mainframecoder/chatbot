@@ -62,8 +62,7 @@ document.getElementById("user-input")
     if (e.key === "Enter") sendMessage();
 });
 
-// THEME SWITCHER
-document.getElementById("theme-switcher")
-.addEventListener("change", function(e) {
-    document.body.className = e.target.value;
-});
+// THEME SWITCH
+function setTheme(theme) {
+    document.body.className = theme;
+}
