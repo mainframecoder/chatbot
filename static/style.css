@@ -1,9 +1,9 @@
 :root {
-    --bg: #0f172a;
-    --chat-bg: #111827;
+    --bg: #0b1220;
+    --chat-bg: #0f172a;
     --user-msg: #2563eb;
-    --bot-msg: #1f2937;
-    --text: #ffffff;
+    --bot-msg: #1e293b;
+    --text: #e5e7eb;
     --font-size: 14px;
     --font-family: 'Open Sans', sans-serif;
 }
@@ -57,7 +57,7 @@ body {
 .theme-buttons button {
     background: transparent;
     border: 1px solid rgba(255,255,255,0.1);
-    color: white;
+    color: var(--text);
     padding: 6px 10px;
     border-radius: 8px;
     cursor: pointer;
@@ -65,6 +65,11 @@ body {
 
 .theme-buttons button:hover {
     background: rgba(255,255,255,0.1);
+}
+
+.theme-buttons button.active {
+    border: 1px solid white;
+    box-shadow: 0 0 8px rgba(255,255,255,0.3);
 }
 
 /* CHAT */
@@ -77,7 +82,6 @@ body {
     flex-direction: column;
 }
 
-/* REMOVE SCROLLBAR */
 .chat-box::-webkit-scrollbar {
     display: none;
 }
@@ -104,7 +108,7 @@ body {
 
 .bot {
     background: var(--bot-msg);
-    color: #e5e7eb;
+    color: var(--text);
     align-self: flex-start;
     border-bottom-left-radius: 4px;
 }
@@ -123,8 +127,8 @@ body {
     border: none;
     outline: none;
 
-    background: #0f172a;
-    color: white;
+    background: var(--bot-msg);
+    color: var(--text);
 }
 
 .input-area button {
@@ -157,13 +161,19 @@ body {
 }
 
 /* THEMES */
+
+/* LIGHT */
 .light {
-    --bg: #f3f4f6;
+    --bg: #e5e7eb;
     --chat-bg: #ffffff;
-    --bot-msg: #e5e7eb;
-    --text: #111;
+    --bot-msg: #f1f5f9;
+    --text: #111827;
 }
 
+/* GREEN */
 .green {
+    --bg: #071a14;
+    --chat-bg: #0f2a22;
     --user-msg: #10b981;
+    --bot-msg: #1a3a32;
 }
