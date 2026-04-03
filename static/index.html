@@ -4,22 +4,28 @@
     <title>AI Assistant</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
-<body>
+<body class="dark">
 
 <div class="app">
 
     <!-- Sidebar -->
     <div class="sidebar">
         <h2>💬 Chats</h2>
-        <button onclick="newChat()">+ New Chat</button>
+
+        <button onclick="createNewChat()">+ New Chat</button>
+
+        <div id="chat-list"></div>
+
+        <div class="theme-switcher">
+            <button onclick="setTheme('dark')">🌙</button>
+            <button onclick="setTheme('light')">☀️</button>
+            <button onclick="setTheme('green')">🟢</button>
+        </div>
     </div>
 
     <!-- Chat -->
     <div class="chat-container">
-        <div class="chat-header">
-            🤖 AI Assistant
-            <button onclick="toggleTheme()">🌗</button>
-        </div>
+        <div class="chat-header">🤖 AI Assistant</div>
 
         <div id="chat-box" class="chat-box"></div>
 
@@ -31,8 +37,6 @@
 
 </div>
 
-<!-- ✅ FIX: defer -->
 <script src="/static/script.js" defer></script>
-
 </body>
 </html>
