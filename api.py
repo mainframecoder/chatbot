@@ -13,12 +13,12 @@ from groq import Groq
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-# Load environment variables
+# Load env
 load_dotenv()
 
 app = FastAPI(title="AI Chatbot API")
 
-# CORS (restrict later for production)
+# CORS (restrict later in prod)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -27,7 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve static frontend
+# Static files (serves your mobile UI too)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
@@ -38,14 +38,14 @@ def serve_home():
 def health():
     return {"status": "ok"}
 
-# Initialize Groq
+# Init Groq
 groq_api_key = os.getenv("GROQ_API_KEY")
 if not groq_api_key:
     raise ValueError("❌ GROQ_API_KEY not set")
 
 client = Groq(api_key=groq_api_key)
 
-# Initialize Firebase (optional)
+# Init Firebase (optional)
 db = None
 try:
     if not firebase_admin._apps:
@@ -78,7 +78,7 @@ async def chat(req: ChatRequest):
             {"role": "system", "content": "You are a helpful, smart, concise AI assistant."}
         ]
 
-        # Load last 5 chats (if Firebase enabled)
+        # Load last chats
         if db:
             chats = db.collection("clients") \
                 .document(req.clientId) \
@@ -98,7 +98,7 @@ async def chat(req: ChatRequest):
                 if h.get("response"):
                     messages.append({"role": "assistant", "content": h["response"]})
 
-        # Current message
+        # Add current message
         messages.append({"role": "user", "content": req.message})
 
         # Call LLM
