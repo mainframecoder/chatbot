@@ -2,43 +2,21 @@
 <html>
 <head>
     <title>AI Chat</title>
-
-    <!-- Mobile -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
-
-    <!-- Markdown -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
     <link rel="stylesheet" href="/static/style.css">
 </head>
-
-<body class="dark">
+<body>
 
 <div class="chat-container">
+    <div class="chat-header">🤖 AI Assistant</div>
 
-    <!-- Header -->
-    <div class="chat-header">
-        <span>🤖 AI Assistant</span>
-
-        <div class="theme-buttons">
-            <button onclick="setTheme(event, 'dark')" class="active">🌙</button>
-            <button onclick="setTheme(event, 'light')">☀️</button>
-            <button onclick="setTheme(event, 'green')">🟢</button>
-        </div>
-    </div>
-
-    <!-- Chat -->
     <div id="chat-box" class="chat-box"></div>
 
-    <!-- Input -->
+    <div id="typing" class="typing hidden">Bot is typing...</div>
+
     <div class="input-area">
         <input id="user-input" placeholder="Ask anything..." />
         <button onclick="sendMessage()">Send</button>
     </div>
-
 </div>
 
 <script src="/static/script.js"></script>
