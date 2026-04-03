@@ -12,74 +12,30 @@ async function sendMessage() {
     addMessage(message, "user");
     input.value = "";
 
-    const chatBox = document.getElementById("chat-box");
-
-    const msg = document.createElement("div");
-    msg.classList.add("message", "bot");
-    chatBox.appendChild(msg);
-
-    let fullText = "";
-    let cursor = true;
-
-    const cursorInterval = setInterval(() => {
-        msg.innerHTML = renderMarkdown(fullText + (cursor ? "▌" : ""));
-        cursor = !cursor;
-    }, 400);
+    showTyping(true);
 
     try {
         const response = await fetch(API_URL, {
             method: "POST",
-            headers: {"Content-Type": "application/json"},
+            headers: {
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify({
-                message,
+                message: message,
                 userId: USER_ID,
                 clientId: CLIENT_ID
             })
         });
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
+        const data = await response.json();
 
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value, { stream: true });
-            fullText += chunk;
-
-            msg.innerHTML = renderMarkdown(fullText + "▌");
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        clearInterval(cursorInterval);
-
-        msg.innerHTML = renderMarkdown(fullText);
-        addCopyButtons(msg);
+        showTyping(false);
+        addMessage(data.reply, "bot");
 
     } catch (err) {
-        msg.innerText = "⚠️ Error";
-        clearInterval(cursorInterval);
+        showTyping(false);
+        addMessage("⚠️ Error connecting to server", "bot");
     }
-}
-
-function renderMarkdown(text) {
-    return marked.parse(text);
-}
-
-function addCopyButtons(container) {
-    container.querySelectorAll("pre").forEach(block => {
-        const btn = document.createElement("button");
-        btn.innerText = "Copy";
-        btn.className = "copy-btn";
-
-        btn.onclick = () => {
-            navigator.clipboard.writeText(block.innerText);
-            btn.innerText = "Copied!";
-            setTimeout(() => btn.innerText = "Copy", 1000);
-        };
-
-        block.appendChild(btn);
-    });
 }
 
 function addMessage(text, sender) {
@@ -87,17 +43,17 @@ function addMessage(text, sender) {
 
     const msg = document.createElement("div");
     msg.classList.add("message", sender);
-
-    if (sender === "bot") {
-        msg.innerHTML = renderMarkdown(text);
-    } else {
-        msg.innerText = text;
-    }
+    msg.innerText = text;
 
     chatBox.appendChild(msg);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-function setTheme(event, theme) {
-    document.body.className = theme;
+function showTyping(show) {
+    document.getElementById("typing").classList.toggle("hidden", !show);
 }
+
+document.getElementById("user-input")
+.addEventListener("keypress", function(e) {
+    if (e.key === "Enter") sendMessage();
+});
