@@ -3,8 +3,10 @@
 <head>
     <title>AI Chat</title>
 
+    <!-- ✅ MOBILE FIX -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <!-- Font -->
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="/static/style.css">
@@ -14,6 +16,7 @@
 
 <div class="chat-container">
 
+    <!-- Header -->
     <div class="chat-header">
         <span>🤖 AI Assistant</span>
 
@@ -24,8 +27,13 @@
         </div>
     </div>
 
+    <!-- Chat -->
     <div id="chat-box" class="chat-box"></div>
 
+    <!-- Typing -->
+    <div id="typing" class="typing hidden">Bot is typing...</div>
+
+    <!-- Input -->
     <div class="input-area">
         <input id="user-input" placeholder="Ask anything..." />
         <button onclick="sendMessage()">Send</button>
