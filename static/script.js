@@ -1,66 +1,59 @@
-const API = "";
+const API_URL = "/chat";
 
-let token = localStorage.getItem("token");
-
-async function login() {
-  const email = prompt("Email");
-  const password = prompt("Password");
-
-  const res = await fetch(API + "/login", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ email, password })
-  });
-
-  const data = await res.json();
-  token = data.token;
-  localStorage.setItem("token", token);
-
-  loadHistory();
-}
+const USER_ID = "user123";
+const CLIENT_ID = "client123";
 
 async function sendMessage() {
-  const input = document.getElementById("input");
-  const text = input.value;
-  input.value = "";
+    const input = document.getElementById("user-input");
+    const message = input.value.trim();
 
-  addMessage(text, "user");
+    if (!message) return;
 
-  const res = await fetch(API + "/chat?token=" + token, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ message: text })
-  });
+    addMessage(message, "user");
+    input.value = "";
 
-  const data = await res.json();
+    showTyping(true);
 
-  // typing effect
-  const div = addMessage("", "bot");
-  let i = 0;
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: message,
+                userId: USER_ID,
+                clientId: CLIENT_ID
+            })
+        });
 
-  const interval = setInterval(() => {
-    div.innerText += data.response[i];
-    i++;
-    if (i >= data.response.length) clearInterval(interval);
-  }, 20);
+        const data = await response.json();
+
+        showTyping(false);
+        addMessage(data.reply, "bot");
+
+    } catch (err) {
+        showTyping(false);
+        addMessage("⚠️ Error connecting to server", "bot");
+    }
 }
 
-async function loadHistory() {
-  const res = await fetch(API + "/history?token=" + token);
-  const data = await res.json();
+function addMessage(text, sender) {
+    const chatBox = document.getElementById("chat-box");
 
-  document.getElementById("messages").innerHTML = "";
+    const msg = document.createElement("div");
+    msg.classList.add("message", sender);
+    msg.innerText = text;
 
-  data.forEach(m => addMessage(m.text, m.role));
+    chatBox.appendChild(msg);
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-function addMessage(text, type) {
-  const div = document.createElement("div");
-  div.className = "msg " + type;
-  div.innerText = text;
-  document.getElementById("messages").appendChild(div);
-  return div;
+function showTyping(show) {
+    document.getElementById("typing").classList.toggle("hidden", !show);
 }
 
-if (!token) login();
-else loadHistory();
+document.getElementById("user-input")
+.addEventListener("keypress", function(e) {
+    if (e.key === "Enter") sendMessage();
+});
