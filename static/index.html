@@ -1,33 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>AI Assistant</title>
-  <link rel="stylesheet" href="style.css">
+    <title>AI Chat</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
-<div class="app">
+<div class="chat-container">
+    <div class="chat-header">🤖 AI Assistant</div>
 
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <h2>🤖 AI Assistant</h2>
-    <button onclick="newChat()">+ New Chat</button>
-  </aside>
+    <div id="chat-box" class="chat-box"></div>
 
-  <!-- Chat -->
-  <main class="chat">
+    <div id="typing" class="typing hidden">Bot is typing...</div>
 
-    <div id="messages" class="messages"></div>
-
-    <div class="input-box">
-      <input id="input" type="text" placeholder="Ask anything..." />
-      <button onclick="sendMessage()">Send</button>
+    <div class="input-area">
+        <input id="user-input" placeholder="Ask anything..." />
+        <button onclick="sendMessage()">Send</button>
     </div>
-
-  </main>
-
 </div>
 
-<script src="script.js"></script>
+<script src="/static/script.js"></script>
 </body>
 </html>
