@@ -1,18 +1,24 @@
-from fastapi import FastAPI, Depends, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+import os
+import tempfile
+from datetime import datetime
+
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
-from sqlalchemy.orm import sessionmaker, declarative_base, Session
-from passlib.context import CryptContext
-from jose import jwt
+from dotenv import load_dotenv
 
-SECRET = "secret123"
+from groq import Groq
+import firebase_admin
+from firebase_admin import credentials, firestore
 
-app = FastAPI()
+# ✅ Load env variables
+load_dotenv()
 
-# CORS
+app = FastAPI(title="AI Chatbot API")
+
+# ✅ CORS (tighten later for prod)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,96 +27,105 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Static
+# ✅ Static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
-def serve_ui():
+def serve_home():
     return FileResponse("static/index.html")
 
-# DB
-engine = create_engine("sqlite:///db.sqlite")
-SessionLocal = sessionmaker(bind=engine)
-Base = declarative_base()
+# ✅ Health check
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
-# Models
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True)
-    email = Column(String, unique=True)
-    password = Column(String)
+# ✅ Init Groq
+groq_api_key = os.getenv("GROQ_API_KEY")
+if not groq_api_key:
+    raise ValueError("❌ GROQ_API_KEY not set")
 
-class MessageDB(Base):
-    __tablename__ = "messages"
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer)
-    text = Column(String)
-    role = Column(String)
+client = Groq(api_key=groq_api_key)
 
-Base.metadata.create_all(engine)
+# ✅ Init Firebase
+db = None
 
-pwd = CryptContext(schemes=["bcrypt"])
+try:
+    if not firebase_admin._apps:
+        firebase_key = os.getenv("FIREBASE_KEY")
 
-# Schemas
-class Auth(BaseModel):
-    email: str
-    password: str
+        if firebase_key:
+            with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".json") as f:
+                f.write(firebase_key)
+                temp_path = f.name
 
-class Chat(BaseModel):
+            cred = credentials.Certificate(temp_path)
+            firebase_admin.initialize_app(cred)
+
+    db = firestore.client()
+
+except Exception as e:
+    print("🔥 Firebase Init Error:", e)
+
+# ✅ Request model
+class ChatRequest(BaseModel):
     message: str
+    userId: str
+    clientId: str
 
-# Auth helpers
-def create_token(user_id):
-    return jwt.encode({"user_id": user_id}, SECRET, algorithm="HS256")
-
-def get_user(token: str = ""):
-    try:
-        data = jwt.decode(token, SECRET, algorithms=["HS256"])
-        db = SessionLocal()
-        return db.query(User).filter(User.id == data["user_id"]).first()
-    except:
-        raise HTTPException(401)
-
-# Register
-@app.post("/register")
-def register(data: Auth):
-    db = SessionLocal()
-    hashed = pwd.hash(data.password)
-    user = User(email=data.email, password=hashed)
-    db.add(user)
-    db.commit()
-    return {"msg": "registered"}
-
-# Login
-@app.post("/login")
-def login(data: Auth):
-    db = SessionLocal()
-    user = db.query(User).filter(User.email == data.email).first()
-    if not user or not pwd.verify(data.password, user.password):
-        raise HTTPException(401)
-    return {"token": create_token(user.id)}
-
-# Chat
+# ✅ Chat endpoint
 @app.post("/chat")
-def chat(data: Chat, token: str):
-    user = get_user(token)
-    db = SessionLocal()
+async def chat(req: ChatRequest):
+    try:
+        messages = [
+            {"role": "system", "content": "You are a helpful, smart, concise AI assistant."}
+        ]
 
-    # save user message
-    db.add(MessageDB(user_id=user.id, text=data.message, role="user"))
+        # 🔁 Load last 3 chats
+        if db:
+            chats = db.collection("clients") \
+                .document(req.clientId) \
+                .collection("users") \
+                .document(req.userId) \
+                .collection("chats") \
+                .order_by("timestamp", direction=firestore.Query.DESCENDING) \
+                .limit(3) \
+                .stream()
 
-    reply = f"AI: {data.message}"  # replace later with OpenAI
+            history = [c.to_dict() for c in chats]
+            history.reverse()
 
-    db.add(MessageDB(user_id=user.id, text=reply, role="bot"))
-    db.commit()
+            for h in history:
+                if h.get("message"):
+                    messages.append({"role": "user", "content": h["message"]})
+                if h.get("response"):
+                    messages.append({"role": "assistant", "content": h["response"]})
 
-    return {"response": reply}
+        # 👉 Current message
+        messages.append({"role": "user", "content": req.message})
 
-# History
-@app.get("/history")
-def history(token: str):
-    user = get_user(token)
-    db = SessionLocal()
+        # 🤖 Call LLM
+        completion = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=messages
+        )
 
-    msgs = db.query(MessageDB).filter(MessageDB.user_id == user.id).all()
-    return [{"text": m.text, "role": m.role} for m in msgs]
+        reply = completion.choices[0].message.content
+
+        # 💾 Save chat
+        if db:
+            db.collection("clients") \
+                .document(req.clientId) \
+                .collection("users") \
+                .document(req.userId) \
+                .collection("chats") \
+                .add({
+                    "message": req.message,
+                    "response": reply,
+                    "timestamp": datetime.utcnow()
+                })
+
+        return {"reply": reply}
+
+    except Exception as e:
+        print("🔥 CHAT ERROR:", e)
+        return {"reply": "⚠️ Something went wrong. Try again."}
