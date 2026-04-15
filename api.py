@@ -129,3 +129,9 @@ async def chat(req: ChatRequest):
     except Exception as e:
         print("🔥 CHAT ERROR:", e)
         return {"reply": "⚠️ Something went wrong. Try again."}
+
+from fastapi.responses import FileResponse
+
+@app.get("/widget.js")
+def widget():
+    return FileResponse("static/widget.js", media_type="application/javascript")
