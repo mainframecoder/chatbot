@@ -1,92 +1,118 @@
 (function () {
-  // 💬 Chat Button
-  const btn = document.createElement("button");
-  btn.innerText = "💬";
+  // 💬 Button
+  const btn = document.createElement("div");
+  btn.innerHTML = "💬";
   btn.style = `
     position: fixed;
     bottom: 20px;
     right: 20px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: black;
+    width: 55px;
+    height: 55px;
+    background: linear-gradient(135deg, #6d28d9, #2563eb);
     color: white;
-    border: none;
-    cursor: pointer;
-    z-index: 9999;
+    border-radius: 50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:22px;
+    cursor:pointer;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    z-index:9999;
   `;
   document.body.appendChild(btn);
 
-  // 📦 Chat Box
+  // 📦 Chatbox
   const box = document.createElement("div");
   box.style = `
-    display: none;
     position: fixed;
-    bottom: 80px;
+    bottom: 90px;
     right: 20px;
-    width: 320px;
-    height: 420px;
-    background: #111;
-    color: white;
-    border-radius: 10px;
-    padding: 10px;
-    z-index: 9999;
+    width: 340px;
+    height: 480px;
+    background: #0f172a;
+    border-radius: 16px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
     font-family: Arial;
+    z-index:9999;
   `;
 
   box.innerHTML = `
-    <div style="font-weight:bold; margin-bottom:10px;">AI Assistant</div>
-    <div id="chat-messages" style="height:300px; overflow-y:auto; font-size:14px;"></div>
-    <input id="chat-input" placeholder="Ask something..." style="width:70%; padding:6px;" />
-    <button id="send-btn">Send</button>
+    <div style="padding:14px; background:linear-gradient(135deg,#6d28d9,#2563eb); font-weight:bold;">
+      AI Assistant
+    </div>
+
+    <div id="chat-messages" style="flex:1; padding:10px; overflow-y:auto;"></div>
+
+    <div style="display:flex; border-top:1px solid #1f2937;">
+      <input id="chat-input" placeholder="Ask about products..." 
+        style="flex:1; padding:10px; border:none; background:#111827; color:white;">
+      <button id="send-btn" style="padding:10px; background:#2563eb; color:white; border:none;">
+        ➤
+      </button>
+    </div>
   `;
 
   document.body.appendChild(box);
 
-  // 🔁 Toggle Chat
+  // Toggle
   btn.onclick = () => {
-    box.style.display = box.style.display === "none" ? "block" : "none";
+    box.style.display = box.style.display === "none" ? "flex" : "none";
   };
 
-  // 📩 Send Message
+  // Message UI
+  function addMsg(text, sender) {
+    const chat = document.getElementById("chat-messages");
+
+    const div = document.createElement("div");
+    div.style = `
+      margin:6px 0;
+      padding:8px 12px;
+      border-radius:12px;
+      max-width:75%;
+      ${sender === "user" 
+        ? "background:#2563eb; margin-left:auto;" 
+        : "background:#1f2937;"}
+    `;
+    div.innerText = text;
+
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  // Send
   async function sendMessage() {
     const input = document.getElementById("chat-input");
     const msg = input.value.trim();
     if (!msg) return;
 
-    const chat = document.getElementById("chat-messages");
-
-    chat.innerHTML += `<div><b>You:</b> ${msg}</div>`;
+    addMsg(msg, "user");
     input.value = "";
 
     try {
       const res = await fetch("https://chatbot-v4tn.onrender.com/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: {"Content-Type":"application/json"},
         body: JSON.stringify({
           message: msg,
           userId: "user1",
-          clientId: "default"
+          clientId: "store1"
         })
       });
 
       const data = await res.json();
+      addMsg(data.reply, "bot");
 
-      chat.innerHTML += `<div><b>Bot:</b> ${data.reply}</div>`;
-      chat.scrollTop = chat.scrollHeight;
-
-    } catch (err) {
-      chat.innerHTML += `<div style="color:red;">Error connecting</div>`;
+    } catch {
+      addMsg("Error connecting", "bot");
     }
   }
 
-  // 🎯 Button click
+  // Events
   box.querySelector("#send-btn").onclick = sendMessage;
-
-  // ⌨️ Enter key
-  box.querySelector("#chat-input").addEventListener("keypress", function (e) {
+  box.querySelector("#chat-input").addEventListener("keypress", e => {
     if (e.key === "Enter") sendMessage();
   });
 
